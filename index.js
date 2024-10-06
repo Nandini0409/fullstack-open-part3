@@ -1,6 +1,19 @@
 const express = require('express')
+const morgan = require('morgan')
+const cors = require('cors')
 const app = express()
+app.use(cors())
 app.use(express.json())
+
+//with 'tiy' configuration--->
+// morgan('tiny')
+
+morgan.token('data',(req, res)=>{
+  const {id, ...filteredObj} = req.body
+  return req.body ? (JSON.stringify(req.body.name), JSON.stringify(filteredObj)) : ' '
+})
+
+app.use(morgan(':method :url :status :res[content-length]- :response-time ms :data'))
 
 let persons = [
   {
@@ -25,6 +38,7 @@ let persons = [
   }
 ]
 
+
 app.get('/', (request, response) => {
   response.send(`<h1>Hello World</h1>`)
 })
@@ -40,14 +54,14 @@ app.get('/info', (request, response) => {
 app.get('/api/persons/:id', (request, response) => {
   const id = request.params.id
   const person = persons.find(person => person.id === id)
-
+  
   person ? response.json(person) : response.status(404).send('resource not found')
 })
 
 app.delete('/api/persons/:id', (request, response) => {
   const id = request.params.id
   persons = persons.filter(person => person.id !== id)
-
+  
   response.status(204).end()
 })
 
@@ -58,9 +72,10 @@ app.post('/api/persons', (request, response) => {
   const newPerson = {
     name: name,
     number:number,
-    id:id
+    id: id.toString()
   }  
-  console.log(name, number)
+  console.log(request.body.name);
+  
   if(!name || !number){
     response.status(400).send({error: 'values should not be empty'})
   }
@@ -70,7 +85,8 @@ app.post('/api/persons', (request, response) => {
   else{
     persons = persons.concat(newPerson)
     response.json(persons)
-}
+  }
+
 })
 
 const PORT = 3001
