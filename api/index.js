@@ -1,12 +1,12 @@
 const express = require('express')
 const morgan = require('morgan')
 const cors = require('cors')
+const path = require('path')
 const app = express()
+
 app.use(cors())
 app.use(express.json())
-
-//with 'tiy' configuration--->
-// morgan('tiny')
+app.use(express.static(path.join(__dirname,'..', 'dist')))
 
 morgan.token('data',(req, res)=>{
   const {id, ...filteredObj} = req.body
@@ -39,9 +39,9 @@ let persons = [
 ]
 
 
-app.get('/', (request, response) => {
-  response.send(`<h1>Hello World</h1>`)
-})
+// app.get('/', (request, response) => {
+//   response.send(`<h1>Hello World</h1>`)
+// })
 
 app.get('/api/persons', (request, response) => {
   response.json(persons)
@@ -86,7 +86,11 @@ app.post('/api/persons', (request, response) => {
     persons = persons.concat(newPerson)
     response.json(persons)
   }
+  
+})
 
+app.get('*',(request, response)=>{
+  response.sendFile(path.join(__dirname,'..','dist','index.html'))
 })
 
 const port = process.env.PORT || 3001;
