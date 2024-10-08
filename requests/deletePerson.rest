@@ -1,1 +1,1 @@
-DELETE http://localhost:3001/api/persons/3
+DELETE https://phonebook-api-three.vercel.app/api/persons/1
