@@ -2,103 +2,105 @@ const express = require('express')
 const morgan = require('morgan')
 const cors = require('cors')
 const path = require('path')
+require('dotenv').config();
+const Person = require('../models/person.js')
 const app = express()
 
 app.use(cors())
+app.use(express.static(path.join(__dirname, '..', 'dist')))
 app.use(express.json())
-app.use(express.static(path.join(__dirname,'..', 'dist')))
 
-morgan.token('data',(req, res)=>{
-  const {id, ...filteredObj} = req.body
-  return req.body ? (JSON.stringify(req.body.name), JSON.stringify(filteredObj)) : ' '
+morgan.token('data', (req, res) => {
+  const { id, ...filteredObj } = req.body
+  return req.body ? JSON.stringify(filteredObj) : ' ';
 })
 
 app.use(morgan(':method :url :status :res[content-length]- :response-time ms :data'))
 
-let persons = [
-  {
-    "id": "1",
-    "name": "Arto Hellas",
-    "number": "040-123456"
-  },
-  {
-    "id": "2",
-    "name": "Ada Lovelace",
-    "number": "39-44-5323523"
-  },
-  {
-    "id": "3",
-    "name": "Dan Abramov",
-    "number": "12-43-234345"
-  },
-  {
-    "id": "4",
-    "name": "Mary Poppendieck",
-    "number": "39-23-6423122"
-  }
-]
-
-
-// app.get('/', (request, response) => {
-//   response.send(`<h1>Hello World</h1>`)
-// })
-
-app.get('/api/persons', (request, response) => {
-  response.json(persons)
+app.get('/api/persons', (request, response, next) => {
+  Person.find({})
+    .then(person => {
+      person ? response.json(person) : []
+    })
+    .catch((error) => next(error))
 })
 
-app.get('/info', (request, response) => {
-  response.send(`<p>Phonebook has info for ${persons.length} people</p><p>${new Date}</p>`)
+app.get('/info', (request, response, next) => {
+  Person.countDocuments({})
+    .then(count => {
+      response.send(`<p>Phonebook has info for ${count} people</p><p>${new Date}</p>`)
+    })
+    .catch((error) => next(error))
 })
 
-app.get('/api/persons/:id', (request, response) => {
-  const id = request.params.id
-  const person = persons.find(person => person.id === id)
-  
-  person ? response.json(person) : response.status(404).send('resource not found')
-})
-
-app.delete('/api/persons/:id', (request, response) => {
-  const id = request.params.id
-  persons = persons.filter(person => person.id !== id)
-  
-  response.status(204).end()
+app.get('/api/persons/:id', (request, response, next) => {
+  const urlId = request.params.id
+  Person.findById(urlId)
+    .then(returnedPerson => {
+      returnedPerson ? response.json(returnedPerson) : response.status(404).send('resource not found')
+    })
+    .catch((error) => next(error))
 })
 
 
-app.post('/api/persons', (request, response) => {
-  const id= Date.now() + Math.floor(Math.random() * 1000)
-  const {name, number} = request.body
-  const newPerson = {
+app.delete('/api/persons/:id', (request, response, next) => {
+  const urlId = request.params.id
+  Person.findByIdAndDelete(urlId)
+    .then((person) =>{
+      if(!person){
+        response.status(404).send({error :'Person not found!'})
+      }
+      response.status(204).end()
+    } )
+    .catch((error) => next(error))
+})
+
+
+app.post('/api/persons', (request, response, next) => {
+  const { name, number } = request.body
+  const person = new Person({
     name: name,
-    number:number,
-    id: id.toString()
-  }  
-  console.log(request.body.name);
-  
-  if(!name || !number){
-    response.status(400).send({error: 'values should not be empty'})
-  }
-  else if(persons.find((person)=>person.name.toLowerCase() === name.toLowerCase())){
-    response.status(400).send({error: 'Name must be unique!'})
-  }
-  else{
-    persons = persons.concat(newPerson)
-    response.json(persons)
-  }
-  
+    number: number,
+  })
+  person.save()
+    .then(result => response.json(result))
+    .catch((error) => next(error))
 })
 
-app.get('*',(request, response)=>{
-  response.sendFile(path.join(__dirname,'..','dist','index.html'))
+app.put('/api/persons/:id', (request, response, next) => {
+  const { name, number } = request.body
+  const urlId = request.params.id
+  const updatedPerson = { urlId, name, number }
+  Person.findByIdAndUpdate(urlId, updatedPerson, { new: true, runValidators: true })
+    .then((person) => {
+      if(!person){
+        response.status(404).send({error: 'person not found!'})
+      }
+      response.json(person)
+    })
+    .catch(error => next(error))
 })
 
-const port = process.env.PORT || 3001;
+app.get('*', (request, response) => {
+  response.sendFile(path.join(__dirname, '..', 'dist', 'index.html'))
+})
+
+const port = process.env.PORT || 3002;
 app.listen(port)
 console.log(`server running on port ${port}`)
 
 
+const errorHandler = (error, request, response, next) => {
+  if (error.name === 'CastError') {
+    response.status(400).send({ error: 'Malformatted ID' })
+  }
+  else if (error.name === 'ValidationError') {
+    response.status(400).send({ error: error.message })
+  }
+  next(error)
+}
 
+app.use(errorHandler)
 
 
 
