@@ -2,7 +2,7 @@ const express = require('express')
 const morgan = require('morgan')
 const cors = require('cors')
 const path = require('path')
-require('dotenv').config();
+require('dotenv').config()
 const Person = require('../models/person.js')
 const app = express()
 
@@ -10,9 +10,9 @@ app.use(cors())
 app.use(express.static(path.join(__dirname, '..', 'dist')))
 app.use(express.json())
 
-morgan.token('data', (req, res) => {
-  const { id, ...filteredObj } = req.body
-  return req.body ? JSON.stringify(filteredObj) : ' ';
+morgan.token('data', (req) => {
+  const filteredObj = req.body
+  return req.body ? JSON.stringify(filteredObj) : ' '
 })
 
 app.use(morgan(':method :url :status :res[content-length]- :response-time ms :data'))
@@ -46,12 +46,12 @@ app.get('/api/persons/:id', (request, response, next) => {
 app.delete('/api/persons/:id', (request, response, next) => {
   const urlId = request.params.id
   Person.findByIdAndDelete(urlId)
-    .then((person) =>{
-      if(!person){
-        response.status(404).send({error :'Person not found!'})
+    .then((person) => {
+      if (!person) {
+        response.status(404).send({ error: 'Person not found!' })
       }
       response.status(204).end()
-    } )
+    })
     .catch((error) => next(error))
 })
 
@@ -73,8 +73,8 @@ app.put('/api/persons/:id', (request, response, next) => {
   const updatedPerson = { urlId, name, number }
   Person.findByIdAndUpdate(urlId, updatedPerson, { new: true, runValidators: true })
     .then((person) => {
-      if(!person){
-        response.status(404).send({error: 'person not found!'})
+      if (!person) {
+        response.status(404).send({ error: 'person not found!' })
       }
       response.json(person)
     })
@@ -85,7 +85,7 @@ app.get('*', (request, response) => {
   response.sendFile(path.join(__dirname, '..', 'dist', 'index.html'))
 })
 
-const port = process.env.PORT || 3002;
+const port = process.env.PORT || 3002
 app.listen(port)
 console.log(`server running on port ${port}`)
 
