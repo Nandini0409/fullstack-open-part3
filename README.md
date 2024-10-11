@@ -1,2 +1,10 @@
-Link for the backend application -> https://phonebook-api-three.vercel.app
-Link for the backend of phonebook API ->  https://phonebook-api-three.vercel.app/api/persons
+# Phonebook Application
+
+
+##Overview
+
+
+This is a full stack Phonebook web application built with MERN stack.
+
+
+[View the live application here](https://phonebook-fullstack-open.vercel.app/)
